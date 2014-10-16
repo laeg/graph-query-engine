@@ -23,3 +23,5 @@ WHERE 	specifiedAttribute = specifiedValue
 Input: Node Label, Attribute to find, Attribute Value to find
 
 =========================
+
+Next steps are to be able to take an actual statement rather than the parameters... 

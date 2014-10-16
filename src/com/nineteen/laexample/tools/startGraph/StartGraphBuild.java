@@ -77,11 +77,11 @@ public class StartGraphBuild {
 
 		System.out.println("Please enter the number of flights you would like to generate? : ");
 
-		Integer numOfFlights = Integer.parseInt(input.nextLine());
+		Integer numOfFlights = Integer.parseInt(input.nextLine().replaceAll("[^0-9.]", ""));
 
 		System.out.println("Please enter the number of people on each flight you would like to generate? : ");
 
-		Integer numOfPeople = Integer.parseInt(input.nextLine());
+		Integer numOfPeople = Integer.parseInt(input.nextLine().replaceAll("[^0-9.]", ""));
 
 		listOfFlights.putAll(Flight.generateFlights(numOfFlights, numOfPeople));
 
@@ -113,16 +113,18 @@ public class StartGraphBuild {
 
 		Boolean wouldUserLikeToQuery = true;
 
-		GraphDatabase.selectStarFromNodesWhere(graphDb, "People", "firstName", "Conrado");
+		//selectStarFromNodesWhereGraphDatabase.selectStarFromNodesWhere(graphDb, "People", "firstName", "Conrado");
 
 		while (wouldUserLikeToQuery) {
 			wouldUserLikeToQuery = queryGraph(input, graphDb);
 		}
+		
+		// Shutdown database
+		GraphDatabase.shutdownGraphDatabase(graphDb);
 
 		System.out.println("\nFinished creating and querying your graph \n \n---- Created by LAExample ----");
 
-		// Shutdown database
-		GraphDatabase.shutdownGraphDatabase(graphDb);
+		
 
 	}
 
@@ -134,18 +136,42 @@ public class StartGraphBuild {
 		String nodeAttrType;
 		String nodeAttr;
 		switch (answer){
-			case "Y":	System.out.println("Please enter the Node type you're looking for : ");
-						System.out.println("FROM CLAUSE ");
-						nodeType = input.nextLine().trim();
-						System.out.println("Please enter the attribute this node must have : ");
-						System.out.println("WHERE CLAUSE");
-						nodeAttrType = input.nextLine().trim();
-						System.out.println("Please enter the value for this attribute : ");
-						System.out.println("WHERE EQUAL");
-						nodeAttr = input.nextLine().trim();
-						GraphDatabase.findNodes(graphDb, nodeType, nodeAttrType, nodeAttr);
-						queryGraph(input, graphDb);
-						break;
+			case "Y":	
+						System.out.println("What type of query?: \n");
+						System.out.println("1. SELECT id, attribute FROM nodeType WHERE attribute = value\n");
+						System.out.println("2. SELECT * FROM nodeType WHERE attribute = value\n");
+						String queryType = input.nextLine();
+						switch (queryType){
+							case "1":
+								System.out.println("Please enter the Node type you're looking for : ");
+								System.out.println("FROM CLAUSE ");
+								nodeType = input.nextLine().trim();
+								System.out.println("Please enter the attribute this node must have : ");
+								System.out.println("WHERE CLAUSE");
+								nodeAttrType = input.nextLine().trim();
+								System.out.println("Please enter the value for this attribute : ");
+								System.out.println("WHERE EQUAL");
+								nodeAttr = input.nextLine().trim();
+								GraphDatabase.findNodes(graphDb, nodeType, nodeAttrType, nodeAttr);
+								queryGraph(input, graphDb);
+								break;
+							
+							case "2":
+								System.out.println("Please enter the Node type you're looking for : ");
+								System.out.println("FROM CLAUSE ");
+								nodeType = input.nextLine().trim();
+								System.out.println("Please enter the attribute this node must have : ");
+								System.out.println("WHERE CLAUSE");
+								nodeAttrType = input.nextLine().trim();
+								System.out.println("Please enter the value for this attribute : ");
+								System.out.println("WHERE EQUAL");
+								nodeAttr = input.nextLine().trim();
+								GraphDatabase.selectStarFromNodesWhere(graphDb, nodeType, nodeAttrType, nodeAttr);
+								queryGraph(input, graphDb);
+								break;
+								default :	queryGraph(input, graphDb);
+								break;
+						}
 						
 			case "N":	break;
 			default :	queryGraph(input, graphDb);

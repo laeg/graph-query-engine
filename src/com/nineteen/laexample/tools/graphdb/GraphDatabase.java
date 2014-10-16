@@ -357,8 +357,11 @@ public class GraphDatabase {
 						nodeProperties.add( prop );
 					}
 					
+					columnRowBuilder.append(" RELATIONSHIPS \t |");
+					
 					// Set and print the column row
 					columnRow = columnRowBuilder.toString();
+					
 					System.out.println( columnRow );
 					
 					// Reset result row
@@ -370,9 +373,6 @@ public class GraphDatabase {
 						resultRowBuilder.append( "\t" + node.getProperty( nProp ) + " \t| ");
 					}
 					
-					// Set and print the column row
-					resultRow = resultRowBuilder.toString();
-					System.out.println( resultRow );
 					
 					//resultRowBuilder.append(" | \t" + node.getId() + " | \t" + node.getProperty(nodeAttribute) + " | \t");
 					
@@ -393,15 +393,25 @@ public class GraphDatabase {
 					}
 					
 					for (Map.Entry<String, Integer> nodeRelAttributes : relsOfType.entrySet()) {
+						if(relsOfType.entrySet().size() > 1){
+							resultRowBuilder.append(  nodeRelAttributes.getKey().toString() + "," );
+						} else {
+							resultRowBuilder.append(  nodeRelAttributes.getKey().toString());
+						}
+						
 						//System.out.println(" | \t" + node.getId() + " | \t" + node.getProperty(nodeAttribute) + " | \t"
 						//		+ nodeRelAttributes.getKey().toString() + " | \t" + nodeRelAttributes.getValue().toString() + " \t " + "|");
 					}
+					
+					// Set and print the column row
+					resultRow = resultRowBuilder.toString();
+					System.out.println( resultRow );
 					
 					System.out.println("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
 
 				}
 			} else {
-				System.out.println(" |                            						No nodes found												              | ");
+				System.out.println(" |                            						No nodes found										  | ");
 				System.out.println("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
 
 			}
