@@ -7,6 +7,10 @@ import java.util.Scanner;
 
 import org.apache.log4j.Logger;
 import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.factory.GraphDatabaseFactory;
+import org.parboiled.scala.Input;
+
+import sqlStatments.StringAnalysis;
 
 import com.nineteen.laexample.tools.graphdb.GraphDatabase;
 import com.nineteen.laexample.tools.graphdb.RelTypes;
@@ -32,6 +36,12 @@ public class StartGraphBuild {
 
 	private final static String JSON_PATH;
 
+	private static StringAnalysis stringAnalysis;
+
+	private static Scanner input;
+
+	private static GraphDatabaseService graphDb;
+
 	// private static FileDirectory theFileDirectory;
 
 	/**
@@ -51,6 +61,8 @@ public class StartGraphBuild {
 
 		// Instantiate the Logger
 		theLogger = ToolLogger.getLogger();
+		stringAnalysis = new StringAnalysis();
+
 		// theGraphDatabase = new GraphDatabase();
 		// theGraphManager = new GraphManager();
 		// theFileDirectory = new FileDirectory();
@@ -58,73 +70,65 @@ public class StartGraphBuild {
 	}
 
 	public static void main(String[] args) {
+		System.out.println("---- SQL4Neo - Created by LAExample ---- \n");
 
-		// Create a database
-		GraphDatabaseService graphDb = GraphDatabase.createDb();
+		graphDb = logIntoGraph();
 
 		// Input scanner
 		Scanner input = new Scanner(System.in);
 
-		for (String carrierName : Flight.carrierNameOptions) {
-			GraphDatabase.createNode(graphDb, "Carrier", createAMapForNoAttributes("airlineName", carrierName));
-		}
-
-		for (String airportName : Flight.airportNameOptions) {
-			GraphDatabase.createNode(graphDb, "Airports", createAMapForNoAttributes("airportName", airportName));
-		}
-
-		Map<Integer, Flight> listOfFlights = new HashMap<Integer, Flight>();
-
-		System.out.println("Please enter the number of flights you would like to generate? : ");
-
-		Integer numOfFlights = Integer.parseInt(input.nextLine().replaceAll("[^0-9.]", ""));
-
-		System.out.println("Please enter the number of people on each flight you would like to generate? : ");
-
-		Integer numOfPeople = Integer.parseInt(input.nextLine().replaceAll("[^0-9.]", ""));
-
-		listOfFlights.putAll(Flight.generateFlights(numOfFlights, numOfPeople));
-
-		// Get each flight from the generated flights
-		for (Entry<Integer, Flight> fAttribute : listOfFlights.entrySet()) {
-			Flight flight = fAttribute.getValue();
-			GraphDatabase.createNode(graphDb, "Flight", getDetails(flight));
-
-			// Create a relationship to the airline
-			GraphDatabase.createRelationship(graphDb, "airlineName", flight.getCarrierName(), RelTypes.HAS_FLIGHT, "carrierName",
-					flight.getCarrierName());
-
-			// Create a relationship to the airports
-			GraphDatabase.createRelationship(graphDb, "airportName", flight.getDeparture(), RelTypes.FROM_AIRPORT, "flightNumber",
-					Integer.toString(flight.getFlightNumber()));
-			GraphDatabase.createRelationship(graphDb, "flightNumber", Integer.toString(flight.getFlightNumber()), RelTypes.TO_AIRPORT, "airportName",
-					flight.getArrival());
-
-			// Get each list of users from generated users
-			for (Entry<Integer, Person> attribute : flight.getPeopleOnPlane().entrySet()) {
-				Person p = attribute.getValue();
-
-				GraphDatabase.createNode(graphDb, "People", getDetails(p));
-				GraphDatabase.createRelationship(graphDb, "passportNumber", Integer.toString(p.getIdentifier()), RelTypes.ON_FLIGHT, "flightNumber",
-						Integer.toString(flight.getFlightNumber()));
-
-			}
-		}
-
 		Boolean wouldUserLikeToQuery = true;
-
-		//selectStarFromNodesWhereGraphDatabase.selectStarFromNodesWhere(graphDb, "People", "firstName", "Conrado");
 
 		while (wouldUserLikeToQuery) {
 			wouldUserLikeToQuery = queryGraph(input, graphDb);
 		}
 		
-		// Shutdown database
-		GraphDatabase.shutdownGraphDatabase(graphDb);
+		if (!wouldUserLikeToQuery){
+			// Shutdown database
+			GraphDatabase.shutdownGraphDatabase(graphDb);
+		}
 
-		System.out.println("\nFinished creating and querying your graph \n \n---- Created by LAExample ----");
+		System.out.println("\n---- SQL4Neo - Created by LAExample ----");
 
-		
+	}
+
+	private static GraphDatabaseService logIntoGraph() {
+		// Boolean whether the database name is correct
+		Boolean validInput = false;
+
+		// New graph database service
+		GraphDatabaseService graphDb = null;
+
+		// Scanner
+		input = new Scanner(System.in);
+
+		while (!validInput) {
+
+			System.out.println("Select your database");
+			String databaseName = input.nextLine();
+
+			if (!databaseName.isEmpty()) {
+
+				try {
+					graphDb = GraphDatabase.logIntoDb("D:\\Users\\lukganno\\Documents\\Neo4j\\" + databaseName + ".graphdb");
+					
+					if (graphDb != null) {
+						validInput = true;
+						System.out.println("Logged into " + databaseName);
+					}
+
+				} catch (Exception e) {
+					e.printStackTrace();
+					logIntoGraph();
+				}
+
+			} else {
+				validInput = false;
+			}
+
+		}
+
+		return graphDb;
 
 	}
 
@@ -132,53 +136,81 @@ public class StartGraphBuild {
 		System.out.println("Would you like to query the Graph (Y/N) : ");
 
 		String answer = input.nextLine();
+		
+		Boolean keepQuerying = true;
+
+		switch (answer) {
+		case "Y":
+			System.out.print(">");
+			// System.out.println("1. SELECT id, attribute FROM nodeType WHERE attribute = value\n");
+			// System.out.println("2. SELECT * FROM nodeType WHERE attribute = value\n");
+			String queryType = input.nextLine();
+			StringAnalysis.checkString(queryType, graphDb);
+			break;
+		case "N":
+			keepQuerying = false;
+			break;
+		default:
+			queryGraph(input, graphDb);
+			break;
+		}
+
+		return keepQuerying;
+	}
+
+	private static Boolean queryGraphDONTEDIT(Scanner input, GraphDatabaseService graphDb) {
+		System.out.println("Would you like to query the Graph (Y/N) : ");
+
+		String answer = input.nextLine();
 		String nodeType;
 		String nodeAttrType;
 		String nodeAttr;
-		switch (answer){
-			case "Y":	
-						System.out.println("What type of query?: \n");
-						System.out.println("1. SELECT id, attribute FROM nodeType WHERE attribute = value\n");
-						System.out.println("2. SELECT * FROM nodeType WHERE attribute = value\n");
-						String queryType = input.nextLine();
-						switch (queryType){
-							case "1":
-								System.out.println("Please enter the Node type you're looking for : ");
-								System.out.println("FROM CLAUSE ");
-								nodeType = input.nextLine().trim();
-								System.out.println("Please enter the attribute this node must have : ");
-								System.out.println("WHERE CLAUSE");
-								nodeAttrType = input.nextLine().trim();
-								System.out.println("Please enter the value for this attribute : ");
-								System.out.println("WHERE EQUAL");
-								nodeAttr = input.nextLine().trim();
-								GraphDatabase.findNodes(graphDb, nodeType, nodeAttrType, nodeAttr);
-								queryGraph(input, graphDb);
-								break;
-							
-							case "2":
-								System.out.println("Please enter the Node type you're looking for : ");
-								System.out.println("FROM CLAUSE ");
-								nodeType = input.nextLine().trim();
-								System.out.println("Please enter the attribute this node must have : ");
-								System.out.println("WHERE CLAUSE");
-								nodeAttrType = input.nextLine().trim();
-								System.out.println("Please enter the value for this attribute : ");
-								System.out.println("WHERE EQUAL");
-								nodeAttr = input.nextLine().trim();
-								GraphDatabase.selectStarFromNodesWhere(graphDb, nodeType, nodeAttrType, nodeAttr);
-								queryGraph(input, graphDb);
-								break;
-								default :	queryGraph(input, graphDb);
-								break;
-						}
-						
-			case "N":	break;
-			default :	queryGraph(input, graphDb);
-						break;
+		switch (answer) {
+		case "Y":
+			System.out.println("What type of query?: \n");
+			System.out.println("1. SELECT id, attribute FROM nodeType WHERE attribute = value\n");
+			System.out.println("2. SELECT * FROM nodeType WHERE attribute = value\n");
+			String queryType = input.nextLine();
+			switch (queryType) {
+			case "1":
+				System.out.println("Please enter the Node type you're looking for : ");
+				System.out.println("FROM CLAUSE ");
+				nodeType = input.nextLine().trim();
+				System.out.println("Please enter the attribute this node must have : ");
+				System.out.println("WHERE CLAUSE");
+				nodeAttrType = input.nextLine().trim();
+				System.out.println("Please enter the value for this attribute : ");
+				System.out.println("WHERE EQUAL");
+				nodeAttr = input.nextLine().trim();
+				GraphDatabase.findNodes(graphDb, nodeType, nodeAttrType, nodeAttr);
+				queryGraph(input, graphDb);
+				break;
+
+			case "2":
+				System.out.println("Please enter the Node type you're looking for : ");
+				System.out.println("FROM CLAUSE ");
+				nodeType = input.nextLine().trim();
+				System.out.println("Please enter the attribute this node must have : ");
+				System.out.println("WHERE CLAUSE");
+				nodeAttrType = input.nextLine().trim();
+				System.out.println("Please enter the value for this attribute : ");
+				System.out.println("WHERE EQUAL");
+				nodeAttr = input.nextLine().trim();
+				GraphDatabase.selectStarFromNodesWhere(graphDb, nodeType, nodeAttrType, nodeAttr);
+				queryGraph(input, graphDb);
+				break;
+			default:
+				queryGraph(input, graphDb);
+				break;
+			}
+
+		case "N":
+			break;
+		default:
+			queryGraph(input, graphDb);
+			break;
 		}
-			
-		
+
 		return false;
 	}
 

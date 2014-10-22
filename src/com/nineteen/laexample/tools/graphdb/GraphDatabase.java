@@ -94,6 +94,34 @@ public class GraphDatabase {
 		return graphDb;
 	}
 
+	public static GraphDatabaseService logIntoDb(String databasePath) {
+		// theLogger.info(Messages.getString("GraphDatabase.CreatingGraphDb"));
+		System.out.println("Logging into " + databasePath);
+		// Instantiates a new database
+		GraphDatabaseService graphDb = new GraphDatabaseFactory().newEmbeddedDatabase(databasePath);
+
+		// New transaction
+		Transaction tx = graphDb.beginTx();
+
+		try {
+
+			// create an index of all nodes
+			nodeIndex = graphDb.index().forNodes("nodes");
+
+			// Register a shutdown hook that will make sure the database shuts
+			// when the JVM exits
+			GraphUtil.registerShutdownHook(graphDb);
+
+			tx.success();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			tx.close();
+		}
+
+		return graphDb;
+	}
+	
 	/**
 	 * Create a node with attributes
 	 * 
@@ -112,24 +140,32 @@ public class GraphDatabase {
 
 			if (!nodeLabel.isEmpty()) {
 				if (!nodeAttributes.isEmpty()) {
-
-					// create the node
-					aNode = graphDb.createNode();
-
-					// add the node label
-					aNode.addLabel(DynamicLabel.label(nodeLabel));
-
-					// Get each attribute and set node properties == to
-					// attributes
-					for (Map.Entry<String, String> attribute : nodeAttributes.entrySet()) {
-						aNode.setProperty(attribute.getKey(), attribute.getValue());
-					}
-
-					// Get each attribute and add to the index
-					for (Map.Entry<String, String> attribute : nodeAttributes.entrySet()) {
-						nodeIndex.add(aNode, attribute.getKey(), attribute.getValue());
-						System.out.println("\t \t \t \t added to index :- " + attribute.getKey() + " = " + attribute.getValue());
-					}
+					
+					//Integer weight;
+					 
+					//for (Map.Entry<String, String> checkAttribute : nodeAttributes.entrySet()) {
+					//	if (graphDb.findNodesByLabelAndProperty(DynamicLabel.label(nodeLabel), checkAttribute.getKey(), checkAttribute.getKey()).iterator() != null) {
+					//		
+					//	}
+					//}
+						
+						// create the node
+						aNode = graphDb.createNode();
+	
+						// add the node label
+						aNode.addLabel(DynamicLabel.label(nodeLabel));
+	
+						// Get each attribute and set node properties == to
+						// attributes
+						for (Map.Entry<String, String> attribute : nodeAttributes.entrySet()) {
+							aNode.setProperty(attribute.getKey(), attribute.getValue());
+						}
+	
+						// Get each attribute and add to the index
+						for (Map.Entry<String, String> attribute : nodeAttributes.entrySet()) {
+							nodeIndex.add(aNode, attribute.getKey(), attribute.getValue());
+							System.out.println("\t \t \t \t added to index :- " + attribute.getKey() + " = " + attribute.getValue());
+						}		
 
 					tx.success();
 
@@ -254,8 +290,7 @@ public class GraphDatabase {
 
 	/**
 	 */
-	public static void createPossibleRelationship(GraphDatabaseService graphDb, String aAttributeName, String aValue, String bAttributeName,
-			String bValue) {
+	public static void createPossibleRelationship(GraphDatabaseService graphDb, String aAttributeName, String aValue, String bAttributeName, String bValue) {
 		// Start a transaction
 		Transaction tx = graphDb.beginTx();
 
@@ -327,7 +362,7 @@ public class GraphDatabase {
 				foundNodes.add(findables.next());
 			}
 
-			System.out.println("\tLabel - " + nodeType + " \t | Attribute - " + nodeAttribute + " \t| Value - "
+			System.out.println("\tLabel - " + nodeType + "  | Attribute - " + nodeAttribute + " | Value - "
 					+ nodeRequiredValue + "\nResults for query:");
 			System.out.println("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
 
@@ -345,7 +380,7 @@ public class GraphDatabase {
 					columnRowBuilder.setLength(0);
 					
 					// Create the result wall
-					columnRowBuilder.append(" | \t ID \t |");
+					columnRowBuilder.append(" |  ID |");
 										
 					// Get each of the nodes properties
 					// Add the properties to create the column rows
@@ -353,11 +388,11 @@ public class GraphDatabase {
 					Integer keyCount = 0;
 					ArrayList<String> nodeProperties = new ArrayList<String>();
 					for (String prop : propertyKeys){
-						columnRowBuilder.append( prop + " | \t" );
+						columnRowBuilder.append( prop + " | " );
 						nodeProperties.add( prop );
 					}
 					
-					columnRowBuilder.append(" RELATIONSHIPS \t |");
+					columnRowBuilder.append(" RELATIONSHIPS  |");
 					
 					// Set and print the column row
 					columnRow = columnRowBuilder.toString();
@@ -367,10 +402,10 @@ public class GraphDatabase {
 					// Reset result row
 					resultRowBuilder.setLength(0);
 					
-					resultRowBuilder.append( " | \t" + node.getId() + " | \t " );
+					resultRowBuilder.append( " | " + node.getId() + " |  " );
 					
 					for( String nProp : nodeProperties ){
-						resultRowBuilder.append( "\t" + node.getProperty( nProp ) + " \t| ");
+						resultRowBuilder.append( node.getProperty( nProp ) + " | ");
 					}
 					
 					
